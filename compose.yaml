@@ -1,0 +1,19 @@
+services:
+  order-postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${ORDER_DB_NAME:?Set ORDER_DB_NAME}
+      POSTGRES_USER: ${ORDER_DB_USER:?Set ORDER_DB_USER}
+      POSTGRES_PASSWORD: ${ORDER_DB_PASSWORD:?Set ORDER_DB_PASSWORD}
+    ports:
+      - "127.0.0.1:${ORDER_DB_PORT:?Set ORDER_DB_PORT}:5432"
+    volumes:
+      - order-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  order-db-data:

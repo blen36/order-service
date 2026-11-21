@@ -6,39 +6,44 @@ services:
       POSTGRES_USER: ${ORDER_DB_USER:?Set ORDER_DB_USER}
       POSTGRES_PASSWORD: ${ORDER_DB_PASSWORD:?Set ORDER_DB_PASSWORD}
     ports:
-      - "127.0.0.1:${ORDER_DB_PORT:?Set ORDER_DB_PORT}:5432"
+    - 127.0.0.1:${ORDER_DB_PORT:?Set ORDER_DB_PORT}:5432
     volumes:
-      - order-db-data:/var/lib/postgresql/data
+    - order-db-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      test:
+      - CMD-SHELL
+      - pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"
       interval: 3s
       timeout: 3s
       retries: 20
-
   order-service:
-    image: "order-service:${ORDER_IMAGE_TAG:-local}"
+    image: order-service:${ORDER_IMAGE_TAG:-local}
     build:
       context: .
     environment:
-      ORDER_PORT: "8083"
+      ORDER_PORT: '8083'
       ORDER_DB_HOST: order-postgres
-      ORDER_DB_PORT: "5432"
-      ORDER_DB_NAME: "${ORDER_DB_NAME:-order_service_db}"
-      ORDER_DB_USER: "${ORDER_DB_USER:-order_app}"
-      ORDER_DB_PASSWORD: "${ORDER_DB_PASSWORD:?Set ORDER_DB_PASSWORD in .env}"
-      # The existing Gateway stack publishes User and Auth on host ports 18080 and 18081.
-      USER_SERVICE_URL: "${ORDER_CONTAINER_USER_URL:-http://host.docker.internal:18080}"
-      AUTH_JWKS_URI: "${ORDER_CONTAINER_JWKS_URI:-http://host.docker.internal:18081/.well-known/jwks.json}"
+      ORDER_DB_PORT: '5432'
+      ORDER_DB_NAME: ${ORDER_DB_NAME:-order_service_db}
+      ORDER_DB_USER: ${ORDER_DB_USER:-order_app}
+      ORDER_DB_PASSWORD: ${ORDER_DB_PASSWORD:?Set ORDER_DB_PASSWORD in .env}
+      USER_SERVICE_URL: ${ORDER_CONTAINER_USER_URL:-http://host.docker.internal:18080}
+      AUTH_JWKS_URI: ${ORDER_CONTAINER_JWKS_URI:-http://host.docker.internal:18081/.well-known/jwks.json}
+      ORDER_PAYMENT_EVENTS_ENABLED: ${ORDER_PAYMENT_EVENTS_ENABLED:-false}
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS:-host.docker.internal:9092}
     ports:
-      - "127.0.0.1:${ORDER_PORT:-8083}:8083"
+    - 127.0.0.1:${ORDER_PORT:-8083}:8083
     depends_on:
       order-postgres:
         condition: service_healthy
     healthcheck:
-      test: [ "CMD-SHELL", "curl -sS --max-time 3 -o /dev/null -w '%{http_code}' http://localhost:8083/api/v1/orders | grep -qx 401" ]
+      test:
+      - CMD-SHELL
+      - curl -sS --max-time 3 -o /dev/null -w '%{http_code}' http://localhost:8083/api/v1/orders
+        | grep -qx 401
       interval: 5s
       timeout: 4s
       retries: 12
       start_period: 35s
 volumes:
-  order-db-data:
+  order-db-data: null

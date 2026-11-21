@@ -1,0 +1,5 @@
+databaseChangeLog:
+  - include:
+      file: db/changelog/001-create-order-schema.sql
+  - include:
+      file: db/changelog/002-payment-events.sql
